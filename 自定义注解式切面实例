@@ -1,0 +1,67 @@
+1.自定义annotation注解
+
+	@Target({ElementType.METHOD})
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	@Inherited
+	public @interface HeiHei {
+	}
+	
+
+2.  定义切面，把切面的连接点放在定义的注解上
+
+	/**
+	 * 切面
+	 */
+	@Aspect  //声明这是一个切面
+	@Component //把这个类交给spring管理
+	public class HeiHeiAspect {
+
+		//把切面的连接点放在自己的注解上
+		@Pointcut("@annotation(com.example.yg.test2.firstDemo.haha.HeiHei)")
+		public void cutAspect(){
+			System.out.println("执行切入点方法.......");
+		}
+		//调用方法前执行
+		@Before("cutAspect()")
+		public void beforeHandle(JoinPoint joinPoint){
+			HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+
+			String method = request.getMethod();
+			System.out.println("方法前执行。。。beforeHandle方法");
+			System.out.println("(前置)被切方法的参数："+JSON.toJSON(joinPoint.getArgs()));
+		}
+
+		@After("cutAspect()")
+		public void after(JoinPoint joinPoint){
+	//        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+	//        System.out.println("后置request原始请求参数："+JSON.toJSONString(request));
+			System.out.println("调用方法后执行.....");
+			System.out.println("（后置）被切方法的参数："+JSON.toJSON(joinPoint.getArgs()));
+		}
+	}
+	
+
+3.定义controller 进行测试
+
+  @RestController
+	@RequestMapping("/test")
+	public class HahaTest {
+
+		@HeiHei
+		@RequestMapping(value = "/heihei",method = RequestMethod.POST)
+		public void heiheiMethod(@RequestBody JSONObject param){
+
+			System.out.println("原请求参数："+JSON.toJSON(param));
+			param.put("name","lisi");
+			System.out.println("修改后的请求参数："+JSON.toJSON(param));
+
+		}
+	}
+
+
+
+
+
+
+
