@@ -1,0 +1,61 @@
+1.解密annotation注解
+
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+public @interface DecryptValid {
+    String desc() default "解密开始...";
+}
+
+
+
+
+2.解密切面
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import javax.servlet.http.HttpServletRequest;
+
+
+@Aspect
+@Component
+@Order(value = 3)
+public abstract class DecryptAspect {
+    private static final Logger logger = LoggerFactory.getLogger(DecryptAspect.class);
+    // 切入点
+    @Pointcut("@annotation(annotation注解包路径)")
+    public void decryptValidAspect() {
+    }
+
+    @Around("decryptValidAspect()")
+    public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.info("执行解密开始......");
+        Object retVal = null;
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String method = request.getMethod();
+        if (method.equalsIgnoreCase("POST")) {
+            retVal = doDecryptValidRequestPost(joinPoint, request);
+            if (retVal == null) {
+                logger.info("注意:还没实现解密业务");
+                retVal = joinPoint.getArgs();
+            }
+        } else {
+            throw new Exception(KkBusinessErrorEnum.REQ_METHOD_INVALID.getName());
+        }
+        logger.info("结束执行解密");
+        return retVal;
+    }
+
+   
+    //解密具体实现的业务模块去执行
+    public  abstract Object doDecryptValidRequestPost(ProceedingJoinPoint joinPoint,HttpServletRequest request) throws Throwable;
+
+}
